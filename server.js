@@ -1,16 +1,9 @@
 const WebSocket = require('ws');
-const http = require('http');
-const express = require('express');
-const app = express();
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-// Render needs this for the free tier
 const PORT = process.env.PORT || 10000;
+const wss = new WebSocket.Server({ port: PORT });
 
 const rooms = new Map();
-// Store player data: coins, accessories, stats
 const playerData = new Map();
 
 wss.on('connection', (ws) => {
@@ -21,7 +14,6 @@ wss.on('connection', (ws) => {
       ws.roomId = msg.roomId; 
       ws.playerId = msg.playerId || `player_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Load saved data or create new player
       if (!playerData.has(ws.playerId)) {
         playerData.set(ws.playerId, {
           coins: 0,
@@ -33,14 +25,12 @@ wss.on('connection', (ws) => {
       if (!rooms.has(msg.roomId)) rooms.set(msg.roomId, new Set());
       rooms.get(msg.roomId).add(ws);
       
-      // Send player their saved data
       ws.send(JSON.stringify({
         type: 'playerData',
         data: playerData.get(ws.playerId),
         playerId: ws.playerId
       }));
       
-      // Tell room about new player
       broadcastRoom(ws.roomId, {
         type: 'playerJoin',
         playerId: ws.playerId,
@@ -62,17 +52,12 @@ wss.on('connection', (ws) => {
       if (item && pData.coins >= item.cost && !pData.accessories.includes(msg.item)) {
         pData.coins -= item.cost;
         pData.accessories.push(msg.item);
-        // Apply stat effects
-        Object.keys(item.effect).forEach(stat => {
-          pData.stats[stat] = (pData.stats[stat] || 0) + item.effect[stat];
-        });
         
         ws.send(JSON.stringify({
           type: 'purchaseSuccess',
           data: pData
         }));
         
-        // Update all players in room about new accessory
         broadcastRoom(ws.roomId, {
           type: 'playerUpdate',
           playerId: ws.playerId,
@@ -89,7 +74,6 @@ wss.on('connection', (ws) => {
       ws.send(JSON.stringify({ type: 'playerData', data: pData }));
     }
     
-    // Relay all other messages to room
     if (ws.roomId && rooms.has(ws.roomId)) {
       rooms.get(ws.roomId).forEach(c => {
         if (c !== ws && c.readyState === WebSocket.OPEN) {
@@ -123,4 +107,4 @@ function broadcastRoom(roomId, data) {
   }
 }
 
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+console.log(`Server running on ${PORT}`);
