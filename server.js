@@ -41,11 +41,11 @@ wss.on('connection', (ws) => {
     if (msg.type === 'buy') {
       const pData = playerData.get(ws.playerId);
       const shopItems = {
-        sunglasses: { cost: 5, effect: { speed: 0.1 } },
-        spikehat: { cost: 8, effect: { dmg: 1 } },
-        cape: { cost: 10, effect: { hp: 2 } },
-        clover: { cost: 12, effect: { coinMult: 0.25 } },
-        crown: { cost: 15, effect: { hp: 1, dmg: 1, speed: 0.05 } }
+        sunglasses: { cost: 5 },
+        spikehat: { cost: 8 },
+        cape: { cost: 10 },
+        clover: { cost: 12 },
+        crown: { cost: 15 }
       };
       
       const item = shopItems[msg.item];
